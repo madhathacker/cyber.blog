@@ -14,7 +14,7 @@ According to [Microsoft's documentation](https://support.microsoft.com/en-us/win
 - x64 or ARM64 Processor Architecture
 - Must enable Virtual Machine Platform feature
 
-![Enabling VMP](/assets/wsa/windows_features.png)
+![Enabling VMP]({{site.url}}/assets/wsa/windows_features.png)
 
 ## Downloading WSA
 Before we can begin our analysis of WSA, we must first obtain it. WSA can be downloaded and installed in one of two ways:
@@ -28,7 +28,7 @@ Before we can begin our analysis of WSA, we must first obtain it. WSA can be dow
 
            Add-AppxPackage MicrosoftCorporationII.WindowsSubsystemForAndroid_2210.40000.7.0_neutral_~_8wekyb3d8bbwe.msixbundle.msixbundle
 
-![Downloading WSA](/assets/wsa/wsa_download.png)
+![Downloading WSA]({{site.url}}/assets/wsa/wsa_download.png)
 
 ## WSA MSIX Package
 
@@ -40,7 +40,7 @@ First We extract the MSIXbundle file using an archiving tool such as [7-zip](htt
 
 Let's take a look at the x64 package using MSIX Hero.
 
-![WSA MSIX Package](/assets/wsa/wsa_msix.png)
+![WSA MSIX Package]({{site.url}}/assets/wsa/wsa_msix.png)
 
 
 ## WSA Installation
@@ -76,4 +76,12 @@ When an app is installed into WSA, the host Windows operating system is notified
 - The Image icons for the installed apps are stored in:
 `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalState\[appID].ico/.png`
 
-![WSA App Icons](/assets/wsa/wsa_app_icons.png)
+![WSA App Icons]({{site.url}}/assets/wsa/wsa_app_icons.png)
+
+
+## WSA VHDX Files
+
+Since the WSA is esentially a virutal machine, there must be a virtual hard disk where it stores all the Android files.
+These virtual hard disk files are stored in `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalCache`
+
+A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file my be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attmepting to open it.

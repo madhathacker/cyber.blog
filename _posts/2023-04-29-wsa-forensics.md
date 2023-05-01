@@ -3,9 +3,9 @@ layout: post
 ---
 ![Installing WSA](/assets/wsa/wsa_install.png)
 
-[Windows Subsystem for Android](https://learn.microsoft.com/en-us/windows/android/wsa/) (WSA) is a program that allows users to run Android applications on Windows by utilizing Microsoft's Hyper-V virtualization technology. This creates a need for a  new form of forensic acquisitions that blend both mobile and desktop techniques and tools. In this blog post, I will be exploring WSA; from reverse engineering core system executable, to exploring strange directory paths for forensic artifacts.
+[Windows Subsystem for Android](https://learn.microsoft.com/en-us/windows/android/wsa/) (WSA) is a program that allows users to run Android applications on Windows by utilizing Microsoft's Hyper-V virtualization technology. Now suspects of criminal investigations may have evidence that is traditionally found on their phone inside of their computer. This creates a need for a  new form of forensic acquisitions that blends both mobile and desktop techniques and tools. In this blog post, I will be exploring WSA -- from reverse engineering core system executable to exploring strange directory paths for forensic artifacts.
 
-> Note: WSA is only officially supported on Windows 11 and requires Hyper-V. This means you will not be able to use WSA in a VM unless you have correctly nested the virtualization technology.
+> Note: WSA is only officially supported on Windows 11 and requires Hyper-V. This means you will not be able to use WSA in a Virtual Machine (VM) unless you have correctly nested the virtualization technology.
 
 ---
 
@@ -20,6 +20,7 @@ layout: post
       2. [Artifacts of installing a WSA App](#Artifacts-of-installing-a-WSA-App)
       3. [Artifacts of WSA App Activity](#Artifacts-of-WSA-App-Activity)
             - [WSA VHDX Files](#WSA-VHDX-Files)
+3. [Processing a Forensic Image with WSA](#Processing-a-Forensic-Image-with-WSA)
 
 ---
 
@@ -38,7 +39,7 @@ According to [Microsoft's documentation](https://support.microsoft.com/en-us/win
 Before we can begin our analysis of WSA, we must first obtain it. WSA can be downloaded and installed in one of two ways:
 
 1. Install the [Amazon Appstore](https://apps.microsoft.com/store/detail/amazon-appstore/9NJHK44TTKSX) (this method required an Amazon account)
-2. Manually obtain the WSA MSIX Pacakge
+2. Manually obtain the WSA MSIX Package
     1. GoTo: [https://store.rg-adguard.net/](https://store.rg-adguard.net/)
     2. Select **Productid** and enter `9p3395vx91nr`, then select **Slow**
     3. Click on the link: **MicrosoftCorporationII.WindowsSubsystemForAndroid_2210.40000.7.0_neutral_~_8wekyb3d8bbwe.msixbundle**
@@ -50,9 +51,9 @@ Before we can begin our analysis of WSA, we must first obtain it. WSA can be dow
 
 ## WSA MSIX Package
 
-If you manually downloaded the WSA MSIXbundle file, then you have an oppertunity to examine how WSA is structures before actually installing it. According to [Microsoft's documentation](https://learn.microsoft.com/en-us/windows/msix/overview), an MSIX file is "a Windows app package format that provides a modern packaging experience to all Windows apps." We can use a tool such as [MSIX Hero](https://msixhero.net/) to examine the internal strucutre of this mysterious MSIX file.
+If you manually downloaded the WSA MSIXbundle file, then you have an opportunity to examine how WSA is structured before installing it. According to [Microsoft's documentation](https://learn.microsoft.com/en-us/windows/msix/overview), an MSIX file is "a Windows app package format that provides a modern packaging experience to all Windows apps." We can use a tool such as [MSIX Hero](https://msixhero.net/) to examine the internal structure of this mysterious MSIX file.
 
-First We extract the MSIXbundle file using an archiving tool such as [7-zip](https://www.7-zip.org/). This should leave us with a folder containing a few dozen MSIX files along with a folder named `AppxMetdata` which contains the file `AppxBundleManifest.xml`. . The MSIX file that we want to examine will depend on our CPU architecture:
+First, we extract the MSIXbundle file using an archiving tool such as [7-zip](https://www.7-zip.org/). This should leave us with a folder containing a few dozen MSIX files along with a folder named `AppxMetdata` which contains the file `AppxBundleManifest.xml`. . The MSIX file that we want to examine will depend on our CPU architecture:
 - `WsaPackage_2302.40000.9.0_x64_Release-Nightly.msix`
 - `WsaPackage_2302.40000.9.0_ARM64_Release-Nightly.msix`
 
@@ -107,7 +108,7 @@ An app can be installed in one of two ways:
 1. Through the Amazon AppStore
 2. Manually installing an APK
 
-When an app is installed into WSA, the host Windows operating system is notified creates a number of artifacts:
+When an app is installed into WSA, the host Windows operating system is notified and generates a number of helpful artifacts:
 - A .lnk file is generated in the directory
 `C:\Users\acbuc\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\` that contains a link to launch the app using the WSAClient.exe:
 
@@ -124,24 +125,26 @@ When an app is installed into WSA, the host Windows operating system is notified
 
 ### WSA VHDX Files
 
-Since the WSA is esentially a virutal machine, there must be a virtual hard disk where it stores all the Android system files.
+Since the WSA is essentially a virtual machine, there must be a virtual hard disk where it stores all the Android system files.
 These virtual hard disk files are stored in `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalCache`
 
 ![WSA VHDX Files](/assets/wsa/vhdx_files.png)
 
-A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file my be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attmepting to open it.
+A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file may be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attempting to open it.
 
 ![VHDX Encrypted](/assets/wsa/vhdx_encrypted.png)
 
-It appears Microsoft is either encrpyting or compressing the VHDX file for WSA. Let's take a look at the [VHDX specifcation sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start prasing through the format.
+It appears Microsoft is either encrypting or compressing the VHDX file for WSA. Let's examine the [VHDX specification sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start prasing the format.
 
 ![VHDX Headers](/assets/wsa/vhdx_headers.png)
 
-It appears as though `LogOffset` is not properly points to the log section. It is located at `0x101000` instead of `0x100000`. After patching the file by changing the offset to the correct value (in little endianess), and recaulculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation), I attempted to read the VHDX files and... 
+It appears `LogOffset` is not properly pointing to the corret offset of the log section. It is located at `0x101000` instead of `0x100000`. Let's patch the file by changing the offset to the correct value (in little endianess), and recalculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation). Now we can attempted to read the VHDX files and... 
 
 It didn't work.
 
-It looks like decoding the VHDX format used for WSA may involve reverse engineering the WSA executables that load the VHDX files into memory beofre starting the virtual system. Let's try simply importing a VHDX file from another Android Subsystem.
+It looks like decoding the VHDX format used for WSA may involve reverse engineering the WSA executables that load the VHDX files into memory before starting the virtual system. Properly decoding this VHDX file may be the topic of a future blog posh. For now, let's try simply importing a VHDX file from another WSA instance into our own local WSA installation.
 
-## Forensic Image with WSA
+# Processing a Forensic Image with WSA
+
+Forensics expert Jessica Hyde has kindly provided me with a sample forensic image of a device where the user has installed and interacted the Windows Subsystem for Android. Let's open the image up in [FTK Imager](https://www.exterro.com/ftk-imager) and see if we can figure out what the user was doing in WSA using the information we have learned.
 

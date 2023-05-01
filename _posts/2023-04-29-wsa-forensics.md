@@ -16,9 +16,9 @@ layout: post
       3. [WSA MSIX Package](#WSA-MSIX-Package)
       4. [WSA Executables](#WSA-Executables)
 2. [Forensic Artifacts](#Forensic-Artifacts)
-      1. [Installing WSA](#Installing-WSA)
-      2. [Installing an App](#Installing-an-App)
-      3. [App Activity](#App-Activity)
+      1. [Artifacts of installing WSA](#IArtifacts-of-installing-WSA)
+      2. [Artifacts of installing a WSA App](#Artifacts-of-installing-a-WSA-App)
+      3. [Artifacts of WSA App Activity](#Artifacts-of-WSA-App-Activity)
             - [WSA VHDX Files](#WSA-VHDX-Files)
 
 ---
@@ -62,11 +62,16 @@ Let's take a look at the x64 package using MSIX Hero.
 
 ## WSA Executables
 
+| Name        | Description |
+| ----------- | ----------- |
+| WsaSettings.exe      | Title       |
+| Paragraph   | Text        |
+
 ---
 
 # Forensic Artifacts
 
-## Installing WSA
+## Artifacts of installing WSA
 
 During the installation of the WSA package, a number of key directories are created:
 
@@ -78,7 +83,7 @@ This location is the core of WSA. All of the WSA executables are stored here.
 
 This is where all of the interesting user artifacts are stores.
 
-## Installing an App
+## Artifacts of installing a WSA App
 
 An app can be installed in one of two ways:
 1. Through the Amazon AppStore
@@ -97,7 +102,7 @@ When an app is installed into WSA, the host Windows operating system is notified
 
 ![WSA App Icons](/assets/wsa/wsa_app_icons.png)
 
-## App Activity
+## Artifacts of WSA App Activity
 
 ### WSA VHDX Files
 

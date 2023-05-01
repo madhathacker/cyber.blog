@@ -62,10 +62,29 @@ Let's take a look at the x64 package using MSIX Hero.
 
 ## WSA Executables
 
-| Name        | Description |
+- WSA Settings Application: `C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2303.40000.5.0_x64__8wekyb3d8bbwe\WsaSettings.exe`
+
+   - WSA Client: `C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2303.40000.5.0_x64__8wekyb3d8bbwe\WsaClient\WsaClient.exe`
+
+      - WSA GSK Server: `C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2303.40000.5.0_x64__8wekyb3d8bbwe\GSKServer\GSKServer.exe`
+
+- WSA Service Manager: `C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2303.40000.5.0_x64__8wekyb3d8bbwe\WsaService\WsaService.exe`
+
+Reverse engineering WSAClient.exe reveals support for the following arguments:
+- /restart
+- /launch  (For example: `/launch wsa://com.android.documentsui`)
+- /modify
+- /deeplink
+- /uninstall
+- /shutdown
+- /toast
+
+### WSA Virtual Machine Processes
+| Program Name | Description |
 | ----------- | ----------- |
-| WsaSettings.exe      | Title       |
-| Paragraph   | Text        |
+| vmcompute.exe | Hyper-V Host Compute Service |
+| vmwp.exe | Virtual Machine Worker Process |
+| vmmemWSA | WSA VMMWP Instance |
 
 ---
 
@@ -73,15 +92,14 @@ Let's take a look at the x64 package using MSIX Hero.
 
 ## Artifacts of installing WSA
 
-During the installation of the WSA package, a number of key directories are created:
+By running [Regshot](https://github.com/Seabreg/Regshot) and [Procmon](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) during the installation of the WSA package, created and modified directories and registry keys can be logged. 
 
-`C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2301.40000.7.0_x64__8wekyb3d8bbwe`
+Installation of WSA creates a number of key directories:
 
-This location is the core of WSA. All of the WSA executables are stored here.
-
-`C:\Users\[USERNAME]\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe`
-
-This is where all of the interesting user artifacts are stores.
+| Path | Description |
+| --- | ----------- |
+| `C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForAndroid_2301.40000.7.0_x64__8wekyb3d8bbwe` | Core of WSA. All of the WSA executables are stored here. |
+| `C:\Users\[USERNAME]\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe` | WSA user data including Android VHDX. |
 
 ## Artifacts of installing a WSA App
 
@@ -106,9 +124,24 @@ When an app is installed into WSA, the host Windows operating system is notified
 
 ### WSA VHDX Files
 
-Since the WSA is esentially a virutal machine, there must be a virtual hard disk where it stores all the Android files.
+Since the WSA is esentially a virutal machine, there must be a virtual hard disk where it stores all the Android system files.
 These virtual hard disk files are stored in `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalCache`
+
+![WSA VHDX Files](/assets/wsa/vhdx_files.png)
 
 A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file my be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attmepting to open it.
 
-![WSA App Icons](/assets/wsa/vhdx_files.png)
+![VHDX Encrypted](/assets/wsa/vhdx_encrypted.png)
+
+It appears Microsoft is either encrpyting or compressing the VHDX file for WSA. Let's take a look at the [VHDX specifcation sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start prasing through the format.
+
+![VHDX Headers](/assets/wsa/vhdx_headers.png)
+
+It appears as though `LogOffset` is not properly points to the log section. It is located at `0x101000` instead of `0x100000`. After patching the file by changing the offset to the correct value (in little endianess), and recaulculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation), I attempted to read the VHDX files and... 
+
+It didn't work.
+
+It looks like decoding the VHDX format used for WSA may involve reverse engineering the WSA executables that load the VHDX files into memory beofre starting the virtual system. Let's try simply importing a VHDX file from another Android Subsystem.
+
+## Forensic Image with WSA
+

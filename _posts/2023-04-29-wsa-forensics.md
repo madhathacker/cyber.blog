@@ -1,7 +1,7 @@
 ---
 layout: post
 ---
-![Installing WSA](/assets/wsa/wsa_install.png)
+![Installing WSA](/cyber.blog/assets/wsa/wsa_install.png)
 
 [Windows Subsystem for Android](https://learn.microsoft.com/en-us/windows/android/wsa/) (WSA) is a program that allows users to run Android applications on Windows by utilizing Microsoft's Hyper-V virtualization technology. This creates a need for a  new form of forensic acquisitions that blend both mobile and desktop techniques and tools. In this blog post, I will be exploring WSA; from reverse engineering core system executable, to exploring strange directory paths for forensic artifacts.
 
@@ -14,7 +14,7 @@ According to [Microsoft's documentation](https://support.microsoft.com/en-us/win
 - x64 or ARM64 Processor Architecture
 - Must enable Virtual Machine Platform feature
 
-![Enabling VMP]({{site.url}}/assets/wsa/windows_features.png)
+![Enabling VMP](/cyber.blog/assets/wsa/windows_features.png)
 
 ## Downloading WSA
 Before we can begin our analysis of WSA, we must first obtain it. WSA can be downloaded and installed in one of two ways:
@@ -28,7 +28,7 @@ Before we can begin our analysis of WSA, we must first obtain it. WSA can be dow
 
            Add-AppxPackage MicrosoftCorporationII.WindowsSubsystemForAndroid_2210.40000.7.0_neutral_~_8wekyb3d8bbwe.msixbundle.msixbundle
 
-![Downloading WSA]({{site.url}}/assets/wsa/wsa_download.png)
+![Downloading WSA](/cyber.blog/assets/wsa/wsa_download.png)
 
 ## WSA MSIX Package
 
@@ -40,7 +40,7 @@ First We extract the MSIXbundle file using an archiving tool such as [7-zip](htt
 
 Let's take a look at the x64 package using MSIX Hero.
 
-![WSA MSIX Package]({{site.url}}/assets/wsa/wsa_msix.png)
+![WSA MSIX Package](/cyber.blog/assets/wsa/wsa_msix.png)
 
 
 ## WSA Installation
@@ -76,7 +76,7 @@ When an app is installed into WSA, the host Windows operating system is notified
 - The Image icons for the installed apps are stored in:
 `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalState\[appID].ico/.png`
 
-![WSA App Icons]({{site.url}}/assets/wsa/wsa_app_icons.png)
+![WSA App Icons](/cyber.blog/assets/wsa/wsa_app_icons.png)
 
 
 ## WSA VHDX Files

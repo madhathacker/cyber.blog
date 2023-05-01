@@ -7,6 +7,24 @@ layout: post
 
 > Note: WSA is only officially supported on Windows 11 and requires Hyper-V. This means you will not be able to use WSA in a VM unless you have correctly nested the virtualization technology.
 
+---
+
+# Table of Contents
+1. [Getting Familiar With WSA](#Getting-Familiar-With-WSA)
+      1. [Prerequisites](#Prerequisites)
+      2. [Downloading WSA](#Downloading-WSA)
+      3. [WSA MSIX Package](#WSA-MSIX-Package)
+      4. [WSA Executables](#WSA-Executables)
+2. [Forensic Artifacts](#Forensic-Artifacts)
+      1. [Installing WSA](#Installing-WSA)
+      2. [Installing an App](#Installing-an-App)
+      3. [App Activity](#App-Activity)
+            - [WSA VHDX Files](#WSA-VHDX-Files)
+
+---
+
+# Getting Familiar With WSA
+
 ## Prerequisites
 According to [Microsoft's documentation](https://support.microsoft.com/en-us/windows/install-mobile-apps-and-the-amazon-appstore-on-windows-f8d0abb5-44ad-47d8-b9fb-ad6b1459ff6c), your system must meet the following requirements:
 - Windows 11
@@ -42,8 +60,13 @@ Let's take a look at the x64 package using MSIX Hero.
 
 ![WSA MSIX Package](/assets/wsa/wsa_msix.png)
 
+## WSA Executables
 
-## WSA Installation
+---
+
+# Forensic Artifacts
+
+## Installing WSA
 
 During the installation of the WSA package, a number of key directories are created:
 
@@ -54,10 +77,6 @@ This location is the core of WSA. All of the WSA executables are stored here.
 `C:\Users\[USERNAME]\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe`
 
 This is where all of the interesting user artifacts are stores.
-
-## Running WSA
-
-
 
 ## Installing an App
 
@@ -78,10 +97,13 @@ When an app is installed into WSA, the host Windows operating system is notified
 
 ![WSA App Icons](/assets/wsa/wsa_app_icons.png)
 
+## App Activity
 
-## WSA VHDX Files
+### WSA VHDX Files
 
 Since the WSA is esentially a virutal machine, there must be a virtual hard disk where it stores all the Android files.
 These virtual hard disk files are stored in `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalCache`
 
 A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file my be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attmepting to open it.
+
+![WSA App Icons](/assets/wsa/vhdx_files.png)

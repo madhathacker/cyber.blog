@@ -1,7 +1,7 @@
 ---
 layout: post
 ---
-![Installing WSA](assets/wsa/wsa_install.png)
+![Installing WSA](/assets/wsa/wsa_install.png)
 
 [Windows Subsystem for Android](https://learn.microsoft.com/en-us/windows/android/wsa/) (WSA) is a program that allows users to run Android applications on Windows by utilizing Microsoft's Hyper-V virtualization technology. Now suspects of criminal investigations may have evidence that is traditionally found on their phone inside of their computer. This creates a need for a  new form of forensic acquisitions that blends both mobile and desktop techniques and tools. In this blog post, I will be exploring WSA -- from reverse engineering core system executable to exploring strange directory paths for forensic artifacts.
 
@@ -33,7 +33,7 @@ According to [Microsoft's documentation](https://support.microsoft.com/en-us/win
 - x64 or ARM64 Processor Architecture
 - Must enable Virtual Machine Platform feature
 
-![Enabling VMP](assets/wsa/windows_features.png)
+![Enabling VMP](/assets/wsa/windows_features.png)
 
 ## Downloading WSA
 Before we can begin our analysis of WSA, we must first obtain it. WSA can be downloaded and installed in one of two ways:
@@ -47,7 +47,7 @@ Before we can begin our analysis of WSA, we must first obtain it. WSA can be dow
 
            Add-AppxPackage MicrosoftCorporationII.WindowsSubsystemForAndroid_2210.40000.7.0_neutral_~_8wekyb3d8bbwe.msixbundle.msixbundle
 
-![Downloading WSA](assets/wsa/wsa_download.png)
+![Downloading WSA](/assets/wsa/wsa_download.png)
 
 ## WSA MSIX Package
 
@@ -59,7 +59,7 @@ First, we extract the MSIXbundle file using an archiving tool such as [7-zip](ht
 
 Let's take a look at the x64 package using MSIX Hero.
 
-![WSA MSIX Package](assets/wsa/wsa_msix.png)
+![WSA MSIX Package](/assets/wsa/wsa_msix.png)
 
 ## WSA Executables
 
@@ -119,7 +119,7 @@ When an app is installed into WSA, the host Windows operating system is notified
 - The Image icons for the installed apps are stored in:
 `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalState\[appID].ico/.png`
 
-![WSA App Icons](assets/wsa/wsa_app_icons.png)
+![WSA App Icons](/assets/wsa/wsa_app_icons.png)
 
 ## Artifacts of WSA App Activity
 
@@ -128,15 +128,15 @@ When an app is installed into WSA, the host Windows operating system is notified
 Since the WSA is essentially a virtual machine, there must be a virtual hard disk where it stores all the Android system files.
 These virtual hard disk files are stored in `C:\Users\acbuc\AppData\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe\LocalCache`
 
-![WSA VHDX Files](assets/wsa/vhdx_files.png)
+![WSA VHDX Files](/assets/wsa/vhdx_files.png)
 
 A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a VHDX file may be opened or mounted to view the contents of the virtual filesystem. Windows Subsystem for Linux (WSL) uses a VHDX file to store its virtual filesystem. Although the WSL VHDX file can be easily opened, the WSA VHDX file crashes FTK Imager and other software attempting to open it.
 
-![VHDX Encrypted](assets/wsa/vhdx_encrypted.png)
+![VHDX Encrypted](/assets/wsa/vhdx_encrypted.png)
 
 It appears Microsoft is either encrypting or compressing the VHDX file for WSA. Let's examine the [VHDX specification sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start prasing the format.
 
-![VHDX Headers](assets/wsa/vhdx_headers.png)
+![VHDX Headers](/assets/wsa/vhdx_headers.png)
 
 It appears `LogOffset` is not properly pointing to the corret offset of the log section. It is located at `0x101000` instead of `0x100000`. Let's patch the file by changing the offset to the correct value (in little endianess), and recalculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation). Now we can attempted to read the VHDX files and... 
 

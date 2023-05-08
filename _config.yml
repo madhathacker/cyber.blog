@@ -6,10 +6,10 @@ author:
 description: >
   Where I talk about digital forensics and other interesting cyber topics.
 
-domain: madhathacker.github.io
-url: https://madhathacker.github.io/
-baseurl: /cyber.blog/
-site_url: https://madhathacker.github.io/cyber.blog/
+#domain: madhathacker.github.io
+#url: https://madhathacker.github.io/
+#baseurl: /cyber.blog/
+#site_url: https://madhathacker.github.io/cyber.blog/
 
 # Build settings
 plugins:

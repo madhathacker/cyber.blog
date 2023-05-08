@@ -1,7 +1,10 @@
 ---
 layout: post
 ---
+
 ![Installing WSA](/assets/wsa/wsa_install.png)
+
+# Introduction
 
 [Windows Subsystem for Android](https://learn.microsoft.com/en-us/windows/android/wsa/) (WSA) is a program that allows users to run Android applications on Windows by utilizing Microsoft's Hyper-V virtualization technology. Now suspects of criminal investigations may have evidence that is traditionally found on their phone inside of their computer. This creates a need for a  new form of forensic acquisitions that blends both mobile and desktop techniques and tools. In this blog post, I will be exploring WSA -- from reverse engineering core system executable to exploring strange directory paths for forensic artifacts.
 
@@ -95,7 +98,7 @@ Reverse engineering WSAClient.exe reveals support for the following arguments:
 
 By running [Regshot](https://github.com/Seabreg/Regshot) and [Procmon](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) during the installation of the WSA package, created and modified directories and registry keys can be logged. 
 
-Installation of WSA creates a number of key directories:
+Installation of WSA creates several key directories:
 
 | Path | Description |
 | --- | ----------- |
@@ -108,7 +111,7 @@ An app can be installed in one of two ways:
 1. Through the Amazon AppStore
 2. Manually installing an APK
 
-When an app is installed into WSA, the host Windows operating system is notified and generates a number of helpful artifacts:
+When an app is installed into WSA, the host Windows operating system is notified and generates several helpful artifacts:
 - A .lnk file is generated in the directory
 `C:\Users\acbuc\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\` that contains a link to launch the app using the WSAClient.exe:
 
@@ -134,17 +137,42 @@ A VHDX file is a Microsoft virtual hard disk format used by Hyper-V. Normally, a
 
 ![VHDX Encrypted](/assets/wsa/vhdx_encrypted.png)
 
-It appears Microsoft is either encrypting or compressing the VHDX file for WSA. Let's examine the [VHDX specification sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start prasing the format.
+It appears Microsoft is either encrypting or compressing the VHDX file for WSA. Let's examine the [VHDX specification sheet](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-vhdx/83e061f8-f6e2-4de1-91bd-5d518a43d477) and see if we can determine what makes this VHDX file special. Let's open the VHDX file with the [HxD hex editor](https://mh-nexus.de/en/hxd/) and start parsing the format.
 
 ![VHDX Headers](/assets/wsa/vhdx_headers.png)
 
-It appears `LogOffset` is not properly pointing to the corret offset of the log section. It is located at `0x101000` instead of `0x100000`. Let's patch the file by changing the offset to the correct value (in little endianess), and recalculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation). Now we can attempted to read the VHDX files and... 
+It appears `LogOffset` is not properly pointing to the correct offset of the log section. It is located at `0x101000` instead of `0x100000`. Let's patch the file by changing the offset to the correct value (in little endianess), and recalculating the CRC-32C checksums (setting the CRC 4 byte field to 00's during the calculation). Now we can attempt to read the VHDX files and... 
 
 It didn't work.
 
-It looks like decoding the VHDX format used for WSA may involve reverse engineering the WSA executables that load the VHDX files into memory before starting the virtual system. Properly decoding this VHDX file may be the topic of a future blog posh. For now, let's try simply importing a VHDX file from another WSA instance into our own local WSA installation.
+It looks like decoding the VHDX format used for WSA may involve reverse engineering the WSA executables that load the VHDX files into memory before starting the virtual system. Properly decoding this VHDX file may be the topic of a future blog post. For now, let's try simply importing a VHDX file from another WSA instance into our own local WSA installation.
 
 # Processing a Forensic Image with WSA
 
-Forensics expert Jessica Hyde has kindly provided me with a sample forensic image of a device where the user has installed and interacted the Windows Subsystem for Android. Let's open the image up in [FTK Imager](https://www.exterro.com/ftk-imager) and see if we can figure out what the user was doing in WSA using the information we have learned.
+Forensics expert Jessica Hyde has kindly provided me with a sample forensic image of a device where the user has installed and interacted with the Windows Subsystem for Android. Let's open the image up in [FTK Imager](https://www.exterro.com/ftk-imager) and see if we can figure out what the user was doing in WSA using the information we have learned.
 
+![FTK Image](/assets/wsa/ftk_image.png)
+
+This appears to be an image of a standard Windows operating system. However, there is a strange folder named `PLAY_STORE_W11_TRD` in the root of the NTFS filesystem. Let's see if can confirm the existence of WSA on the system by looking for the artifacts we mentioned previously. Let's see if we can find a user with a `\Local\Packages\MicrosoftCorporationII.WindowsSubsystemForAndroid_8wekyb3d8bbwe` package file in their `%appdata%` folder.
+
+![FTK AppData WSA](/assets/wsa/ftk_appdata.png)
+
+Well what do you know, it looks like our `borch` user has been using WSA. It also looks like they may have installed GroupMe in WSA. Now, we might not be able to directly extract any data from the WSA files, but let's try to extract the WSA virtual hard drive from the image and see what happens when we replace our own virtual hard drive on our test system with WSA.
+
+![FTK UserData Extract](/assets/wsa/ftk_userdata_export.png)
+
+We will use the `userdata.vhdx` file extracted from the suspect's disk image to overwrite the `userdata.vhdx` file in our test environment (ensuring WSA is not running before the swap). Let's ensure our sandboxed machine doesn't have access to the internet and spin up WSA using the "WSA Settings" application...
+
+![Suspect's WSA System](/assets/wsa/wsa_system.png)
+
+It looks like we now have access to the suspect's WSA system as if we were handed their unlocked phone. However, our host Windows operating system doesn't seem to be aware of what applications they have installed since we just copied the disk file. That's not a problem though, we can use a tool such as [WSA Pacman](https://github.com/alesimula/wsa_pacman) to get a list of installed packages and directly launch them.
+
+![Suspect's WSA Apps](/assets/wsa/wsa_pacman.png)
+
+Now we can see the GroupMe app that the suspect had installed in WSA. Let's launch the app and see what we can find.
+
+![Suspect's WSA GroupMe](/assets/wsa/wsa_groupme.png)
+
+# Conclusion
+
+Windows Subsystem for Android is a new realm of digital forensic evidence ripe for the picking. Although the WSA evidence  is stored on a virtual hard disk file in a strange proprietary format, it is not encrypted using user or endpoint specific keys. This means that any evidence stored within WSA on any computer can be easily extracted by a forensic expert with a spare copy of Windows 11 and the information in this blog post. In a future post, I plan on writing a python script to automatically convert WSA's proprietary VHDK file into a standard format that may be processed with traditional forensic tools, further speeding up analysis and processing of WSA artifacts.

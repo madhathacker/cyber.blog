@@ -1,6 +1,4 @@
----
-layout: post
----
+Windows Subsystem for Android (WSA) Forensics
 
 ![Installing WSA](/assets/wsa/wsa_install.png)
 
